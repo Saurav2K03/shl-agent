@@ -205,7 +205,7 @@ async def chat(request: ChatRequest):
     for attempt in range(max_retries):
         try:
             response = GEMINI_CLIENT.models.generate_content(
-                model="gemini-2.5-flash-lite",
+                model="gemini-2.5-flash",
                 contents=contents,
                 config=config,
             )
