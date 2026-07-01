@@ -31,13 +31,24 @@ async def lifespan(app: FastAPI):
                 keys = item.get("keys", [])
                 test_type = None
 
-                # Map keys to the required test_type
-                if "Knowledge & Skills" in keys:
-                    test_type = "K"
-                elif "Personality & Behavior" in keys or "Competencies" in keys:
-                    test_type = "P"
+                # Map keys to the required test_type code
+                # Priority order: first matching key wins
+                key_to_type = {
+                    "Knowledge & Skills": "K",
+                    "Personality & Behavior": "P",
+                    "Competencies": "P",
+                    "Ability & Aptitude": "A",
+                    "Simulations": "S",
+                    "Biodata & Situational Judgment": "B",
+                    "Development & 360": "D",
+                    "Assessment Exercises": "E",
+                }
+                for key in keys:
+                    if key in key_to_type:
+                        test_type = key_to_type[key]
+                        break
 
-                # Only include valid items with a determined test_type
+                # Include all items with a determined test_type
                 if test_type and "name" in item and "link" in item:
                     CATALOG_DATA.append({
                         "name": item["name"],
@@ -74,7 +85,7 @@ class ChatRequest(BaseModel):
 class Recommendation(BaseModel):
     name: str
     url: str
-    test_type: Literal["K", "P"]
+    test_type: Literal["K", "P", "A", "S", "B", "D", "E"]
 
 class ChatResponse(BaseModel):
     reply: str
@@ -96,7 +107,14 @@ Your ONLY role is to help users find the right SHL Individual Test Solutions fro
 ### 2. RECOMMEND once you have enough context
 - Recommend between 1 and 10 assessments that best match the user's needs.
 - Each recommendation MUST use the exact "name" and "url" from the catalog below. NEVER fabricate or modify URLs.
-- Set "test_type" to "K" for Knowledge & Skills assessments, or "P" for Personality & Behavior / Competencies assessments, exactly as provided in the catalog.
+- Set "test_type" exactly as provided in the catalog:
+  K = Knowledge & Skills
+  P = Personality & Behavior / Competencies
+  A = Ability & Aptitude
+  S = Simulations
+  B = Biodata & Situational Judgment
+  D = Development & 360
+  E = Assessment Exercises
 
 ### 3. REFINE without starting over
 - If the user changes constraints mid-conversation (e.g., "actually I need knowledge tests instead"), update the shortlist accordingly.
