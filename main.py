@@ -135,8 +135,11 @@ Your ONLY role is to help users find the right SHL Individual Test Solutions fro
 - {turn_budget_instruction}
 
 ### 7. END OF CONVERSATION
-- Set "end_of_conversation" to true ONLY when you have provided a final shortlist and the user confirms, or when the turn limit is reached.
-- Otherwise, always set it to false.
+- When the user confirms the shortlist (e.g., "That works", "Perfect", "Looks good", "Lock it in"), you MUST:
+  a. Set "end_of_conversation" to true.
+  b. Re-include the FULL shortlist in the "recommendations" array (do NOT return an empty array).
+  c. Provide a brief confirmation in the "reply" field.
+- Otherwise, always set "end_of_conversation" to false.
 
 ## CATALOG OF AVAILABLE ASSESSMENTS:
 {catalog_json}

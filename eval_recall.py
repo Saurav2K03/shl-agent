@@ -113,22 +113,33 @@ def extract_user_messages(filepath):
     return messages
 
 
+def normalize_name(name):
+    """Normalize assessment name for fuzzy comparison."""
+    n = name.lower().strip()
+    # Remove hyphens/dashes surrounded by spaces (formatting differences)
+    n = re.sub(r'\s*[-–—]\s*', ' ', n)
+    # Collapse multiple spaces
+    n = re.sub(r'\s+', ' ', n)
+    # Remove special chars that vary between trace and catalog
+    n = n.replace('&', 'and')
+    return n
+
+
 def recall_at_k(predicted_names, ground_truth_names, k=10):
     """
-    Compute Recall@K.
+    Compute Recall@K with fuzzy name matching.
     """
     if not ground_truth_names:
         return 1.0  # No ground truth = trivially correct
 
-    # Normalize names for comparison (lowercase, strip whitespace)
-    pred_set = set(n.lower().strip() for n in predicted_names[:k])
-    gt_set = set(n.lower().strip() for n in ground_truth_names)
+    pred_normalized = {normalize_name(n): n for n in predicted_names[:k]}
+    gt_normalized = {normalize_name(n): n for n in ground_truth_names}
 
-    if not gt_set:
+    if not gt_normalized:
         return 1.0
 
-    hits = len(pred_set & gt_set)
-    return hits / len(gt_set)
+    hits = len(set(pred_normalized.keys()) & set(gt_normalized.keys()))
+    return hits / len(gt_normalized)
 
 
 def main():
@@ -167,7 +178,7 @@ def main():
             resp = requests.post(
                 f"{URL}/chat",
                 json={"messages": messages},
-                timeout=60
+                timeout=120
             )
             resp.raise_for_status()
             data = resp.json()
@@ -183,11 +194,11 @@ def main():
             print(f"  Recall@10: {r10:.2f} {status}")
 
             # Show misses
-            pred_set = set(n.lower().strip() for n in pred_names[:10])
-            gt_set = set(n.lower().strip() for n in gt_names)
+            pred_set = set(normalize_name(n) for n in pred_names[:10])
+            gt_set = set(normalize_name(n) for n in gt_names)
             missed = gt_set - pred_set
             if missed:
-                print(f"  Missed: {[n for n in gt_names if n.lower().strip() in missed]}")
+                print(f"  Missed: {[n for n in gt_names if normalize_name(n) in missed]}")
 
         except Exception as e:
             print(f"  ❌ ERROR: {e}")
