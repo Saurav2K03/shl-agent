@@ -205,7 +205,7 @@ async def chat(request: ChatRequest):
     for attempt in range(max_retries):
         try:
             response = GEMINI_CLIENT.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-2.5-flash-lite",
                 contents=contents,
                 config=config,
             )
@@ -219,9 +219,10 @@ async def chat(request: ChatRequest):
             return response_data
         except Exception as e:
             error_str = str(e)
-            # Retry on rate limit (429) with exponential backoff
-            if "429" in error_str and attempt < max_retries - 1:
+            # Retry on rate limit (429) or Unavailable (503) with exponential backoff
+            if ("429" in error_str or "503" in error_str) and attempt < max_retries - 1:
                 wait_time = 2 ** attempt * 5  # 5s, 10s, 20s
+                print(f"Encountered error {error_str}, retrying in {wait_time}s... (Attempt {attempt+1}/{max_retries})")
                 await asyncio.sleep(wait_time)
                 continue
             raise HTTPException(status_code=500, detail=f"Error generating AI response: {e}")

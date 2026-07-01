@@ -6,7 +6,7 @@ The application is built using a modern, lightweight, asynchronous Python stack 
 
 * **Framework:** **FastAPI** was chosen for its native support for asynchronous path operations, automatic OpenAPI documentation, and high-performance execution. It provides the stateless architecture required by the evaluator's grading loops.
 * **Data Validation:** **Pydantic (v2)** is utilized to define the strict incoming payload structure (`{"messages": [...]}`) and the required outgoing response schema (`ChatResponse`).
-* **LLM Provider & SDK:** The native **`google-genai` SDK** is paired with the **Gemini 2.5 Flash** model. Gemini was selected due to its massive context window, fast inference speed, and native `response_schema` enforcement capabilities, ensuring structural failures are mathematically impossible during automated evaluation.
+* **LLM Provider & SDK:** The native **`google-genai` SDK** is paired with the **Gemini 2.5 Flash Lite** model. Gemini was selected due to its massive context window, fast inference speed, native `response_schema` enforcement capabilities, and high free-tier rate limits, ensuring structural failures are mathematically impossible during automated evaluation.
 * **Deployment:** The service is containerized and hosted publicly via **Render**, leveraging environment variable injections for secure API credential management.
 
 ---
