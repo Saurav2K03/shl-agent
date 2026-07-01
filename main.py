@@ -1,5 +1,6 @@
 import json
 import os
+import asyncio
 from contextlib import asynccontextmanager
 from typing import List, Literal, Optional
 
@@ -197,19 +198,27 @@ async def chat(request: ChatRequest):
         temperature=0.2,
     )
 
-    try:
-        response = GEMINI_CLIENT.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=contents,
-            config=config,
-        )
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = GEMINI_CLIENT.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=contents,
+                config=config,
+            )
 
-        response_data = json.loads(response.text)
+            response_data = json.loads(response.text)
 
-        # Server-side enforcement: if this is the final turn, force end_of_conversation
-        if is_final_turn:
-            response_data["end_of_conversation"] = True
+            # Server-side enforcement: if this is the final turn, force end_of_conversation
+            if is_final_turn:
+                response_data["end_of_conversation"] = True
 
-        return response_data
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating AI response: {e}")
+            return response_data
+        except Exception as e:
+            error_str = str(e)
+            # Retry on rate limit (429) with exponential backoff
+            if "429" in error_str and attempt < max_retries - 1:
+                wait_time = 2 ** attempt * 5  # 5s, 10s, 20s
+                await asyncio.sleep(wait_time)
+                continue
+            raise HTTPException(status_code=500, detail=f"Error generating AI response: {e}")
